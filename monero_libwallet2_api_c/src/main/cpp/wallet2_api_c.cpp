@@ -2039,6 +2039,68 @@ void MONERO_free(void* ptr) {
     free(ptr);
 }
 
+// Get output details from a transaction's vin key_offsets.
+typedef struct {
+    uint64_t absolute_offset;
+    uint64_t amount;
+    char public_key[65];
+    char txid[65];
+    bool found;
+} MONERO_output_details;
+
+MONERO_output_details* MONERO_Wallet_getOutputDetailsFromKeyOffsets(
+        void* wallet_ptr,
+        const uint64_t* key_offsets,
+        size_t count,
+        size_t* out_count
+) {
+    *out_count = 0;
+    if (!wallet_ptr || !key_offsets) {
+        return NULL;
+    }
+
+    Monero::Wallet* wallet = reinterpret_cast<Monero::Wallet*>(wallet_ptr);
+    Monero::WalletImpl* walletImpl = dynamic_cast<Monero::WalletImpl*>(wallet);
+    if (!walletImpl) {
+        // The wallet_ptr isn't actually a WalletImpl.
+        return NULL;
+    }
+
+    tools::wallet2* w2 = walletImpl->m_wallet.get();
+    if (!w2) {
+        // No underlying wallet2 instance.
+        return NULL;
+    }
+
+    std::vector<uint64_t> offsets(key_offsets, key_offsets + count);
+    auto output_details_vec = w2->get_output_details_from_key_offsets(offsets);
+
+    *out_count = output_details_vec.size();
+    if (output_details_vec.empty()) {
+        return NULL;
+    }
+
+    MONERO_output_details* c_results = (MONERO_output_details*)malloc(sizeof(MONERO_output_details)*output_details_vec.size());
+    for (size_t i = 0; i < output_details_vec.size(); ++i) {
+        const auto &od = output_details_vec[i];
+        c_results[i].absolute_offset = od.absolute_offset;
+        c_results[i].amount = od.amount;
+        c_results[i].found = od.found;
+
+        std::string pk_hex = epee::string_tools::pod_to_hex(od.public_key);
+        std::string txid_hex = epee::string_tools::pod_to_hex(od.txid);
+        strncpy(c_results[i].public_key, pk_hex.c_str(), sizeof(c_results[i].public_key));
+        c_results[i].public_key[sizeof(c_results[i].public_key)-1] = '\0';
+        strncpy(c_results[i].txid, txid_hex.c_str(), sizeof(c_results[i].txid));
+        c_results[i].txid[sizeof(c_results[i].txid)-1] = '\0';
+    }
+    return c_results;
+}
+
+void MONERO_Wallet_freeOutputDetails(MONERO_output_details* arr) {
+    free(arr);
+}
+
 #ifdef __cplusplus
 }
 #endif

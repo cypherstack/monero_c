@@ -1037,6 +1037,22 @@ extern ADDAPI const char* MONERO_checksum_wallet2_api_c_h();
 extern ADDAPI const char* MONERO_checksum_wallet2_api_c_cpp();
 extern ADDAPI const char* MONERO_checksum_wallet2_api_c_exp();
 
+// Get output details from a transaction's vin key_offsets.
+typedef struct {
+    uint64_t absolute_offset;
+    uint64_t amount;
+    char public_key[65]; // hex-encoded plus NUL terminator.
+    char txid[65];       // hex-encoded plus NUL terminator.
+    bool found;
+} MONERO_output_details;
+
+MONERO_output_details* MONERO_Wallet_getOutputDetailsFromKeyOffsets(void* wallet_ptr,
+                                                                    const uint64_t* key_offsets,
+                                                                    size_t count,
+                                                                    size_t *out_count);
+
+void MONERO_Wallet_freeOutputDetails(MONERO_output_details* arr);
+
 #ifdef __cplusplus
 }
 #endif
