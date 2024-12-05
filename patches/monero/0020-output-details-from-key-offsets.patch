@@ -1,88 +1,82 @@
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
-index bb76efcda..3ee9d4714 100644
+index bb76efcda..173ea9990 100644
 --- a/src/wallet/wallet2.cpp
 +++ b/src/wallet/wallet2.cpp
-@@ -15339,6 +15339,60 @@ size_t wallet2::import_outputs_from_str(const std::string &outputs_st)
+@@ -15339,6 +15339,59 @@ size_t wallet2::import_outputs_from_str(const std::string &outputs_st)
    return imported_outputs;
  }
  //----------------------------------------------------------------------------------------------------
 +struct output_details
 +{
-+    uint64_t absolute_offset;   // Absolute global output index.
-+    uint64_t amount;            // Amount associated with the output.
-+    crypto::public_key public_key; // Public key of the output.
-+    crypto::hash txid;          // Transaction ID from which the output originates.
-+    bool found;                 // Indicates if the output was found.
++  uint64_t absolute_offset;      // Absolute global output index.
++  uint64_t amount;               // Amount associated with the output.
++  crypto::public_key public_key; // Public key of the output.
++  crypto::hash txid;             // Transaction ID from which the output originates.
++  bool found;                    // Indicates if the output was found.
 +};
 +
-+std::vector<wallet2::output_details> wallet2::get_output_details_from_key_offsets(
-+        const std::vector<uint64_t>& key_offsets) const
++std::vector<wallet2::output_details> wallet2::get_output_details_from_key_offsets(const std::vector<uint64_t>& key_offsets) const
 +{
-+    // Convert relative offsets to absolute.
-+    std::vector<uint64_t> absolute_offsets = cryptonote::relative_output_offsets_to_absolute(key_offsets);
++  // Convert relative offsets to absolute.
++  std::vector<uint64_t> absolute_offsets = cryptonote::relative_output_offsets_to_absolute(key_offsets);
 +
-+    // Prepare the request to the daemon.
-+    cryptonote::COMMAND_RPC_GET_OUTPUTS_BIN::request req;
-+    cryptonote::COMMAND_RPC_GET_OUTPUTS_BIN::response res;
++  // Prepare the request to the daemon.
++  cryptonote::COMMAND_RPC_GET_OUTPUTS_BIN::request req;
++  cryptonote::COMMAND_RPC_GET_OUTPUTS_BIN::response res;
 +
-+    req.outputs.resize(absolute_offsets.size());
-+    for (size_t i = 0; i < absolute_offsets.size(); ++i)
-+    {
-+        req.outputs[i].amount = 0; // Use amount = 0 for RingCT outputs.
-+        req.outputs[i].index = absolute_offsets[i];
-+    }
-+    req.get_txid = true; // Request the transaction IDs.
++  req.outputs.resize(absolute_offsets.size());
++  for (size_t i = 0; i < absolute_offsets.size(); i)
++  {
++    req.outputs[i].amount = 0; // Use amount = 0 for RingCT outputs.
++    req.outputs[i].index = absolute_offsets[i];
++  }
++  req.get_txid = true; // Request the transaction IDs.
 +
-+    // Call the daemon's get_outs method.
-+    bool r;
-+    {
-+        boost::lock_guard<boost::mutex> lock(m_daemon_rpc_mutex);
-+        r = epee::net_utils::invoke_http_bin("/get_outs.bin", req, res, m_http_client, rpc_timeout);
-+    }
-+    THROW_ON_RPC_RESPONSE_ERROR_GENERIC(r, {}, res, "/get_outs.bin");
++  // Call the daemon's get_outs method.
++  bool r;
++  {
++    boost::lock_guard<boost::mutex> lock(m_daemon_rpc_mutex);
++    r = epee::net_utils::invoke_http_bin("/get_outs.bin", req, res, m_http_client, rpc_timeout);
++  }
++  THROW_ON_RPC_RESPONSE_ERROR_GENERIC(r, {}, res, "/get_outs.bin");
 +
-+    // Process the outputs.
-+    std::vector<output_details> outputs;
-+    outputs.reserve(res.outs.size());
++  // Process the outputs.
++  std::vector<output_details> outputs;
++  outputs.reserve(res.outs.size());
 +
-+    for (size_t i = 0; i < res.outs.size(); ++i)
-+    {
-+        const auto& out = res.outs[i];
-+        output_details detail;
-+        detail.absolute_offset = absolute_offsets[i];
-+        detail.amount = out.amount;
-+        detail.public_key = out.key;
-+        detail.txid = out.txid;
-+        detail.found = true;
-+        outputs.push_back(detail);
-+    }
++  for (size_t i = 0; i < res.outs.size(); i)
++  {
++    const auto& out = res.outs[i];
++    output_details detail;
++    detail.absolute_offset = absolute_offsets[i];
++    detail.amount = out.amount;
++    detail.public_key = out.key;
++    detail.txid = out.txid;
++    detail.found = true;
++    outputs.push_back(detail);
++  }
 +
-+    return outputs;
++  return outputs;
 +}
 +//----------------------------------------------------------------------------------------------------
  crypto::public_key wallet2::get_multisig_signer_public_key() const
  {
    CHECK_AND_ASSERT_THROW_MES(m_multisig, "Wallet is not multisig");
 diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
-index bc16d528c..1d76a3c79 100644
+index bc16d528c..4283e63be 100644
 --- a/src/wallet/wallet2.h
 +++ b/src/wallet/wallet2.h
-@@ -1658,11 +1658,20 @@ private:
-     bool import_key_images(std::vector<crypto::key_image> key_images, size_t offset=0, boost::optional<std::unordered_set<size_t>> selected_transfers=boost::none);
-     bool import_key_images(signed_tx_set & signed_tx, size_t offset=0, bool only_selected_transfers=false);
-     crypto::public_key get_tx_pub_key_from_received_outs(const tools::wallet2::transfer_details &td) const;
--
-     void update_pool_state(std::vector<std::tuple<cryptonote::transaction, crypto::hash, bool>> &process_txs, bool refreshed = false, bool try_incremental = false);
+@@ -1663,6 +1663,16 @@ private:
      void process_pool_state(const std::vector<std::tuple<cryptonote::transaction, crypto::hash, bool>> &txs);
      void remove_obsolete_pool_txs(const std::vector<crypto::hash> &tx_hashes, bool remove_if_found);
  
 +    struct output_details
 +    {
-+      uint64_t absolute_offset;   // Absolute global output index.
-+      uint64_t amount;            // Amount associated with the output.
++      uint64_t absolute_offset;      // Absolute global output index.
++      uint64_t amount;               // Amount associated with the output.
 +      crypto::public_key public_key; // Public key of the output.
-+      crypto::hash txid;          // Transaction ID from which the output originates.
-+      bool found;                 // Indicates if the output was found.
++      crypto::hash txid;             // Transaction ID from which the output originates.
++      bool found;                    // Indicates if the output was found.
 +    };
 +    std::vector<output_details> get_output_details_from_key_offsets(const std::vector<uint64_t> &key_offsets) const;
 +
