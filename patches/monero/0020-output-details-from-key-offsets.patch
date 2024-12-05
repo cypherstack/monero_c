@@ -63,3 +63,29 @@ index bb76efcda..3ee9d4714 100644
  crypto::public_key wallet2::get_multisig_signer_public_key() const
  {
    CHECK_AND_ASSERT_THROW_MES(m_multisig, "Wallet is not multisig");
+diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
+index bc16d528c..1d76a3c79 100644
+--- a/src/wallet/wallet2.h
++++ b/src/wallet/wallet2.h
+@@ -1658,11 +1658,20 @@ private:
+     bool import_key_images(std::vector<crypto::key_image> key_images, size_t offset=0, boost::optional<std::unordered_set<size_t>> selected_transfers=boost::none);
+     bool import_key_images(signed_tx_set & signed_tx, size_t offset=0, bool only_selected_transfers=false);
+     crypto::public_key get_tx_pub_key_from_received_outs(const tools::wallet2::transfer_details &td) const;
+-
+     void update_pool_state(std::vector<std::tuple<cryptonote::transaction, crypto::hash, bool>> &process_txs, bool refreshed = false, bool try_incremental = false);
+     void process_pool_state(const std::vector<std::tuple<cryptonote::transaction, crypto::hash, bool>> &txs);
+     void remove_obsolete_pool_txs(const std::vector<crypto::hash> &tx_hashes, bool remove_if_found);
+ 
++    struct output_details
++    {
++      uint64_t absolute_offset;   // Absolute global output index.
++      uint64_t amount;            // Amount associated with the output.
++      crypto::public_key public_key; // Public key of the output.
++      crypto::hash txid;          // Transaction ID from which the output originates.
++      bool found;                 // Indicates if the output was found.
++    };
++    std::vector<output_details> get_output_details_from_key_offsets(const std::vector<uint64_t> &key_offsets) const;
++
+     std::string encrypt(const char *plaintext, size_t len, const crypto::secret_key &skey, bool authenticated = true) const;
+     std::string encrypt(const epee::span<char> &span, const crypto::secret_key &skey, bool authenticated = true) const;
+     std::string encrypt(const std::string &plaintext, const crypto::secret_key &skey, bool authenticated = true) const;
