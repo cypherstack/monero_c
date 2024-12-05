@@ -41,3 +41,7 @@ I had some debugging to do, I don't remember actually why I decided to run the t
 # 0008-fix-missing-___clear_cache-when-targetting-iOS
 
 https://github.com/tevador/RandomX/pull/294
+
+# 0020-output-details-from-key-offsets.patch
+
+Take a transaction's vin key_offsets and provide information about the keys referenced by the offsets.
