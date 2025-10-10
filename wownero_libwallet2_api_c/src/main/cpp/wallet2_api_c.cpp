@@ -2162,13 +2162,6 @@ uint64_t WOWNERO_WalletManager_networkDifficulty(void* wm_ptr) {
     return wm->networkDifficulty();
     DEBUG_END()
 }
-//     virtual double miningHashRate() = 0;
-double WOWNERO_WalletManager_miningHashRate(void* wm_ptr) {
-    DEBUG_START()
-    Monero::WalletManager *wm = reinterpret_cast<Monero::WalletManager*>(wm_ptr);
-    return wm->miningHashRate();
-    DEBUG_END()
-}
 //     virtual uint64_t blockTarget() = 0;
 uint64_t WOWNERO_WalletManager_blockTarget(void* wm_ptr) {
     DEBUG_START()
@@ -2181,20 +2174,6 @@ bool WOWNERO_WalletManager_isMining(void* wm_ptr) {
     DEBUG_START()
     Monero::WalletManager *wm = reinterpret_cast<Monero::WalletManager*>(wm_ptr);
     return wm->isMining();
-    DEBUG_END()
-}
-//     virtual bool startMining(const std::string &address, uint32_t threads = 1, bool background_mining = false, bool ignore_battery = true) = 0;
-bool WOWNERO_WalletManager_startMining(void* wm_ptr, const char* address, uint32_t threads, bool backgroundMining, bool ignoreBattery) {
-    DEBUG_START()
-    Monero::WalletManager *wm = reinterpret_cast<Monero::WalletManager*>(wm_ptr);
-    return wm->startMining(std::string(address), threads, backgroundMining, ignoreBattery);
-    DEBUG_END()
-}
-//     virtual bool stopMining() = 0;
-bool WOWNERO_WalletManager_stopMining(void* wm_ptr, const char* address) {
-    DEBUG_START()
-    Monero::WalletManager *wm = reinterpret_cast<Monero::WalletManager*>(wm_ptr);
-    return wm->stopMining();
     DEBUG_END()
 }
 //     virtual std::string resolveOpenAlias(const std::string &address, bool &dnssec_valid) const = 0;
